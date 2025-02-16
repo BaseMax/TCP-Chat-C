@@ -1,4 +1,4 @@
-# TCP-Typescript-C
+# TCP-Chat-C
 
 A lightweight and efficient TCP chat server built with C. This project demonstrates how to handle multiple client connections, broadcast messages, and manage user sessions using C's high-performance networking capabilities.
 
