@@ -83,32 +83,19 @@ void welcome_user(int sockfd) {
         }
         curr = curr->next;
     }
-
-    int needed_size = snprintf(NULL, 0,
-                               userCount == 1 ? 
-                               "🎉 Welcome! You are the only user here.\r\n" : 
-                               "🎉 Welcome! There are %d users online.\r\n👥 Online users: %s\r\n",
-                               userCount, online_users);
-
-    char *welcome_msg = malloc(needed_size + 1);
-    if (!welcome_msg) {
-        perror("malloc");
-        free(online_users);
-        return;
+    
+    char welcome_msg[BUFFER_SIZE];
+    if (userCount == 1) {
+        snprintf(welcome_msg, sizeof(welcome_msg),
+                 "🎉 Welcome! You are the only user here.\r\n");
+    } else {
+        snprintf(welcome_msg, sizeof(welcome_msg),
+                 "🎉 Welcome! There are %d users online.\r\n👥 Online users: %s\r\n",
+                 userCount, online_users);
     }
-
-    snprintf(welcome_msg, needed_size + 1,
-             userCount == 1 ? 
-             "🎉 Welcome! You are the only user here.\r\n" : 
-             "🎉 Welcome! There are %d users online.\r\n👥 Online users: %s\r\n",
-             userCount, online_users);
-
     if (send(sockfd, welcome_msg, strlen(welcome_msg), 0) < 0) {
         perror("send");
     }
-
-    free(online_users);
-    free(welcome_msg);
 }
 
 void register_user(int sockfd, const char *nickname) {
@@ -185,15 +172,8 @@ void handle_data(int sockfd) {
     if (client == NULL) {
         register_user(sockfd, buffer);
     } else {
-        int needed_size = snprintf(NULL, 0, "💬 %s: %s\r\n", client->nickname, buffer);
-        char *msg = malloc(needed_size + 1);
-        if (!msg) {
-            perror("malloc");
-            return;
-        }
-
-        snprintf(msg, needed_size + 1, "💬 %s: %s\r\n", client->nickname, buffer);
-        printf("📢 %s: %s\n", client->nickname, buffer);
+        char msg[BUFFER_SIZE];
+        snprintf(msg, sizeof(msg), "💬 %s: %s\r\n", client->nickname, buffer);
         broadcast(sockfd, msg);
         free(msg);
     }
