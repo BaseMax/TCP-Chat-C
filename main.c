@@ -58,6 +58,7 @@ void welcome_user(int sockfd) {
     online_users[0] = '\0';
     int userCount = 0;
     Client *curr = clients;
+
     while (curr) {
         userCount++;
         if (curr->sockfd != sockfd && curr->nickname) {
@@ -67,19 +68,30 @@ void welcome_user(int sockfd) {
         }
         curr = curr->next;
     }
-    
-    char welcome_msg[BUFFER_SIZE];
-    if (userCount == 1) {
-        snprintf(welcome_msg, sizeof(welcome_msg),
-                 "🎉 Welcome! You are the only user here.\r\n");
-    } else {
-        snprintf(welcome_msg, sizeof(welcome_msg),
-                 "🎉 Welcome! There are %d users online.\r\n👥 Online users: %s\r\n",
-                 userCount, online_users);
+
+    int needed_size = snprintf(NULL, 0,
+                               userCount == 1 ? 
+                               "🎉 Welcome! You are the only user here.\r\n" : 
+                               "🎉 Welcome! There are %d users online.\r\n👥 Online users: %s\r\n",
+                               userCount, online_users);
+
+    char *welcome_msg = malloc(needed_size + 1);
+    if (!welcome_msg) {
+        perror("malloc");
+        return;
     }
+
+    snprintf(welcome_msg, needed_size + 1, 
+             userCount == 1 ? 
+             "🎉 Welcome! You are the only user here.\r\n" : 
+             "🎉 Welcome! There are %d users online.\r\n👥 Online users: %s\r\n",
+             userCount, online_users);
+
     if (send(sockfd, welcome_msg, strlen(welcome_msg), 0) < 0) {
         perror("send");
     }
+
+    free(welcome_msg);
 }
 
 void register_user(int sockfd, const char *nickname) {
@@ -140,7 +152,7 @@ void handle_data(int sockfd) {
         close(sockfd);
         return;
     }
-    
+
     buffer[nbytes] = '\0';
     for (int i = 0; i < nbytes; i++) {
         if (buffer[i] == '\r' || buffer[i] == '\n') {
@@ -148,17 +160,24 @@ void handle_data(int sockfd) {
             break;
         }
     }
-    
+
     if (strlen(buffer) == 0)
         return;
-    
+
     Client *client = find_client_by_socket(sockfd);
     if (client == NULL) {
         register_user(sockfd, buffer);
     } else {
-        char msg[BUFFER_SIZE];
-        snprintf(msg, sizeof(msg), "💬 %s: %s\r\n", client->nickname, buffer);
+        int needed_size = snprintf(NULL, 0, "💬 %s: %s\r\n", client->nickname, buffer);
+        char *msg = malloc(needed_size + 1);
+        if (!msg) {
+            perror("malloc");
+            return;
+        }
+
+        snprintf(msg, needed_size + 1, "💬 %s: %s\r\n", client->nickname, buffer);
         broadcast(sockfd, msg);
+        free(msg);
     }
 }
 
